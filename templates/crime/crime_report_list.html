@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'notice.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'comments.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'list.css' %}">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
+<br><br>
+<br><br>
+<br>
+<div style="height: 100px; width: 100%;">
+  <h1 style="text-align: center;color: red;">
+    Crime Repot Information
+  </h1>
+</div>
+
+
+
+
+
+<form action="{% url 'crime_report' %}" method="POST">
+  {% csrf_token %}
+  <div class="topnav">
+    <div>
+      <select name="choice" class='chech'>
+        <option value="">Division</option>
+        <option value="dhaka">Dhaka</option>
+        <option value="chittagong">chittagong</option>
+        <option value="barishal">Barishal</option>
+        <option value="khulna">Khulna</option>
+        <option value="rajshahi">Rajshahi</option>
+        <option value="rangpur">Rangpur</option>
+        <option value="sylhet">Sylhet</option>
+        <option value="mymensingh">Mymensingh</option>
+      </select>
+    </div>
+    <div>
+      <select id="check11" name="dis">
+        <option> zilla </option>
+      </select>
+    </div>
+
+    <div class="search-container">
+      <input type="text" placeholder="Search.." name="search">
+      <button type="submit"><i class="fa fa-search"></i></button>
+    </div>
+  </div>
+</form>
+
+<form>
+  {% csrf_token %}
+  <div class="container">
+    <div class="row">
+      <p></p>
+      <h3 style="text-align: center;">All crime Report</h3>
+      <p> </p>
+
+      <div class="col-md-10 col-md-offset-1">
+
+        <div class="panel panel-default panel-table">
+          <div class="panel-heading">
+            <div class="row">
+              <div class="col col-xs-6">
+                <h3 class="panel-title"></h3>
+              </div>
+              <div class="col col-xs-6 text-right">
+                {% if profile.type_of == 'victim' %}
+                <button onclick="location.href='{% url 'create_crime' %}'" type="button"
+                  class="btn btn-sm btn-primary btn-create">Add Crime Report</button>
+                <button onclick="location.href='{% url 'own_created_crime' %}'" type="button"
+                  class="btn btn-sm btn-primary btn-create">Own created Crime</button>
+                {% else %}
+                <button onclick="location.href='{% url 'refer_list' %}'" type="button" class="btn btn-sm btn-primary btn-create">Referred List</button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table class="table table-striped table-bordered table-list">
+              <thead>
+                <tr>
+                  <th style="width: 50px;"><em class="fa fa-cog"></em></th>
+                  <th class="hidden-xs">ID</th>
+                  <th>Name</th>
+                  <th>District</th>
+                  <th style="width: 60px;">Comments</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if crimereports %}
+                {% for crime in crimereports %}
+                <tr>
+                  <td align="center">
+                    <a onclick="take_under({{ crime.id }});" class="btn btn-default"><em class="fa fa-bookmark"></em></a>
+                    <a onclick="get_crime({{ crime.id }});" class="btn btn-default"><em class="fa fa-pencil"></em></a>
+                    {% if crime.is_solved == False %}
+                    {% if not profile.type_of == 'victim' %}
+                    <a onclick="solved({{ crime.id }});" class="btn btn-default"><em class="fa fa-times"></em></a>
+                    {% else %}
+                    <a class="btn btn-default"><em class="fa fa-times"></em></a>
+                    {% endif %}
+                    {% else %}
+                    <a class="btn btn-default"><em class="fa fa-check"></em></a>
+                    {% endif %}
+
+                  </td>
+                  <td class="hidden-xs">{{ crime.id }}</td>
+                  <td class="crime_name" id="c_name"> {{ crime.name }} </td>
+                  <td>{{ crime.district }}</td>
+                  <td class="comments_val"> <button onclick="Comment({{ crime.id }});" type="button"
+                      class="btn btn-sm btn-primary btn-create">Comments</button></td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                  <td colspan="4" align="center">
+                    No crime
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+
+          </div>
+          <div class="panel-footer">
+            <div class="row">
+              <div class="col col-xs-4">
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="w3-container">
+  <div id="id01" class="w3-modal">
+  </div>
+</div>
+
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+  <div class="modal-content">
+    <div class="detailBox">
+      <div class="titleBox">
+        <label>Comment Box</label>
+        <button onclick="document.getElementById('myModal').style.display='none';" type="button" class="close"
+          aria-hidden="true">&times;</button>
+      </div>
+      <div class="commentBox">
+
+        <p class="taskDescription" id="crime_names"></p>
+      </div>
+      <div class="actionBox">
+        <ul class="commentList" id="com_list">
+        </ul>
+        <form class="form-inline" role="form">{% csrf_token %}
+          <div class="form-group">
+            <input id="com_body" class="form-control" type="text" placeholder="Your comments" />
+          </div>
+          <div class="form-group">
+            <button class="btn btn-default">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="{% static 'loc.js' %}"></script>
+
+<script>
+  function get_crime(id) {
+    id = id;
+    document.getElementById('id01').style.display = 'block';
+    $('#id01').html('')
+
+    $.ajax({
+      type: 'POST',
+      url: '{% url "show_crime" %}',
+      data: {
+        id: id,
+        csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+      },
+      success: function (data) {
+        var i;
+        for (i = 0; i < data[Object.keys(data)[0]].length; i++) {
+          switch (i) {
+            case 0:
+              name = data[Object.keys(data)[0]][i];
+              break;
+            case 1:
+              title = data[Object.keys(data)[0]][i];
+              break;
+            case 2:
+              phone = data[Object.keys(data)[0]][i];
+              break;
+            case 3:
+              district = data[Object.keys(data)[0]][i];
+              break;
+            case 4:
+              location_crime = data[Object.keys(data)[0]][i];
+              break;
+            case 5:
+              message = data[Object.keys(data)[0]][i];
+              break;
+            case 6:
+              post_time = data[Object.keys(data)[0]][i];
+              break;
+          }
+        }
+        $('#id01').append("<div class='w3-modal-content w3-card-4'>\
+        <header class='w3-container w3-teal'>\
+        <span onclick='close_modal();'\
+          class='w3-button w3-display-topright'>&times;</span>\
+        <h2 id='c_title'>"+ title + "</h2>\
+        </header>\
+      <div class='w3-container'><p></p>\
+        <table class='w3-table w3-blue'>\<tr><th scope='row'>Name</th><td id='name'>"+ name + "</td></tr>\
+          <tr><th scope='row'> Phone </th><td id='phone'>"+ phone + "</td></tr>\
+          <tr><th scope='row'>District </th><td id='district'>"+ district + "</td></tr>\
+          <tr><th scope='row'> Location</th><td id='location'>"+ location_crime + "</td></tr>\
+          <tr><th scope='row'> Message </th><td id='message'>"+ message + "</td></tr>\
+        </table><p></p></div>\
+      <footer class='w3-container w3-teal'><p id='post_time'>"+ post_time + "</p></footer></div>")
+
+      }
+    })
+
+  };
+</script>
+<script>
+  var modal = document.getElementById('id01');
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+<script>
+  function close_modal() {
+    document.getElementById('id01').style.display = 'none';
+  }
+</script>
+
+<script>
+  function Comment(id) {
+    var modal = document.getElementById("myModal");
+    modal.style.display = "block";
+    crime_id = id
+    var data = { 'id': crime_id }
+    $.ajax({
+      method: 'GET',
+      data: data,
+      url: '{% url "reply_crime" %}',
+      success: function (data) {
+        var i;
+        $('#com_list').html("")
+        for (i = 0; i < data.length; i++) {
+          var body = data[i].body
+          var created_at = moment(data[i].cerated_time).format('MMMM Do YYYY, h:mm a');
+          var user = data[i].user__username
+
+
+          $('#com_list').append("<li>\
+                <div class='commenterImage'><b>v</b></div>\
+                <div class='commentText'>\
+                    <p class=''>"+ body  + "&nbsp; &nbsp;<small>commented by"+ user +"</small></p>\
+                    <span class='date sub-text'>"+ created_at + "</span></div>\
+            </li>")
+        }
+      },
+      error: function (error_data) {
+        alert("error")
+      }
+    })
+  }
+
+</script>
+
+<script>
+  $(document).on('ready', function () {
+    $('.comments_val').on('click', function (event) {
+      event.preventDefault();
+      var crime = $(this).parents('tr').children('td.crime_name').text().trim();
+
+      $('#crime_names').text(crime)
+    });
+
+  });
+</script>
+
+<script>
+  $(document).on('submit', 'form.form-inline', function () {
+    $.ajax({
+      method:'post',
+      data:{
+        'body':$("#com_body").val(),
+        'id':crime_id,
+        csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+      },
+      url: '{% url "create_comment" %}',
+      success: function (data) {
+        window.location.reload()
+      },
+      error: function (error_data) {
+        alert("error")
+      }
+    })
+  });
+</script>
+
+<script>
+  function solved(id){
+    $.ajax({
+      method:'get',
+      data:{
+        'id':id,
+      },
+      url: '{% url "solved" %}',
+      success: function (data) {
+        window.location.reload()
+      },
+      error: function (error_data) {
+        alert("error")
+      }
+    })
+
+  }
+</script>
+<script>
+function take_under(id){
+  $.ajax({
+      method:'POST',
+      data:{
+        'id':id,
+        csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+      },
+      url: '{% url "take_under" %}',
+      success: function (data) {
+        alert(data)
+      },
+      error: function (error_data) {
+        alert("error")
+      }
+    })
+
+  }
+</script>
+{% endblock %}
